@@ -1,147 +1,122 @@
-import { useGetPostsQuery } from '@/entities/Post/model/post.api'
+import { getPostByData } from '@/entities/Post/hooks/getPostsByData'
 import { Post } from '@/entities/Post/ui/Post'
-import { HamburgerIcon } from '@/shared/assets/icons/HamburgerIcon'
 import { Loader } from '@/shared/assets/icons/Loader'
-import { cn } from '@/shared/lib/helpers/cn'
-import { Drawer } from '@/widgets/Drawer/Drawer'
+import { Footer } from '@/widgets/Footer/ui/Footer'
+import { Header } from '@/widgets/Header/ui/Header'
 import { format } from 'date-fns'
 import { toZonedTime } from 'date-fns-tz'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 
+export const targetTimezone = 'Europe/Moscow'
+
 export function App() {
-  const [drawer, setDrawer] = useState(false)
-  const [page, setPage] = useState(0)
+  const queryParams = new URLSearchParams(window.location.search)
+  const newsTheme = queryParams.get('q')
   const {
-    data: posts,
+    posts,
+    postsByDate,
     isFetching,
-    isError
-  } = useGetPostsQuery({ page: page + 1 })
+    isLoading,
+    isError,
+    refetch,
+    setPage
+  } = getPostByData(newsTheme)
   const [intersactionRef, inView] = useInView({
     threshold: 0
   })
   useEffect(() => {
-    if (inView && !isFetching && posts && !isError) {
+    if (inView && !isFetching && !isLoading && posts && !isError) {
       setPage(prev => prev + 1)
     }
   }, [inView, isFetching])
 
   useEffect(() => {
-    if (isFetching || isError || drawer) return
+    if (isFetching || isLoading || isError) return
     const interval = setInterval(() => {
       setPage(prev => prev + 1)
-    }, 1000 * 30)
+    }, 1000 * 5)
 
     return () => clearInterval(interval)
-  }, [isFetching, isError, drawer])
+  }, [isFetching, isError])
 
-  const targetTimezone = 'Europe/Moscow'
-
-  const postsByDate = useMemo(() => {
-    if (!posts?.response?.docs) return {}
-
-    return posts.response.docs.reduce(
-      (acc, article) => {
-        const zonedDate = toZonedTime(article.pub_date, targetTimezone)
-        const date = format(zonedDate, 'yyyy-MM-dd')
-
-        if (!acc[date]) acc[date] = []
-        acc[date].push(article)
-        return acc
-      },
-      {} as Record<string, typeof posts.response.docs>
-    )
-  }, [posts])
-  console.log(postsByDate)
   return (
     <div className='font-display w-max-[360px] w-fullitems-center relative flex h-screen justify-center'>
       <div className='relative flex h-full w-full flex-col'>
-        <header className='sticky mb-3 flex h-[72px] w-full shrink-0 items-center border-b border-zinc-200 px-5'>
-          <button
-            className='w-5 cursor-pointer'
-            onClick={() => setDrawer(prev => !prev)}
-          >
-            <HamburgerIcon />
-          </button>
-          {drawer && <Drawer setDrawer={setDrawer} />}
-          <div className='flex flex-1 items-center justify-center text-2xl font-black tracking-widest'>
-            BESIDER
-          </div>
-        </header>
+        <Header />
         <main className='flex w-full flex-1 flex-col items-center px-5'>
           <div className='w-full'>
             <div className='mt-8 flex flex-col gap-4'>
-              {Object.entries(postsByDate)
-                .sort(
-                  ([a], [b]) => new Date(b).getTime() - new Date(a).getTime()
-                )
-                .map(([date, articles]) => (
-                  <div
-                    key={date}
-                    className='mb-6'
-                  >
-                    <h3 className='mb-3 text-xl font-semibold'>
-                      News for {format(date, 'dd.MM.yyyy')}
-                    </h3>
-                    <div className='flex flex-col gap-4'>
-                      {articles.map(article => (
-                        <Post
-                          key={article._id}
-                          description={
-                            article.abstract || article.headline.main
-                          }
-                          url={article.web_url}
-                          source={article.source}
-                          image={article.multimedia?.default?.url}
-                          alt={article.multimedia?.caption}
-                          date={toZonedTime(article.pub_date, targetTimezone)}
-                        />
-                      ))}
-                    </div>
+              {posts?.response.docs !== null ? (
+                <>
+                  {Object.entries(postsByDate)
+                    .sort(
+                      ([a], [b]) =>
+                        new Date(b).getTime() - new Date(a).getTime()
+                    )
+                    .map(([date, articles]) => (
+                      <div
+                        key={date}
+                        className='mb-6'
+                      >
+                        <h3 className='mb-3 text-xl font-semibold'>
+                          News for {format(date, 'dd.MM.yyyy')}
+                        </h3>
+                        <div className='flex flex-col gap-4'>
+                          {articles.map(article => (
+                            <Post
+                              key={article._id}
+                              description={
+                                article.abstract || article.headline.main
+                              }
+                              url={article.web_url}
+                              source={article.source}
+                              image={article.multimedia?.default?.url}
+                              alt={article.multimedia?.caption}
+                              date={toZonedTime(
+                                article.pub_date,
+                                targetTimezone
+                              )}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  <div className='flex w-full justify-center'>
+                    {(isLoading || isFetching) && <Loader />}
+                    {isError && (
+                      <div className='flex flex-col gap-4'>
+                        Loading more error
+                        <button
+                          className='rounded-md border bg-blue-200 font-bold hover:bg-blue-400'
+                          onClick={() => refetch()}
+                        >
+                          Refetch
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
+                </>
+              ) : (
+                <div className='flex h-full w-full flex-col text-center'>
+                  <h3 className='text-2xl font-bold'>No Posts</h3>
+                  <a
+                    href='/'
+                    className='text-xl text-blue-400 underline'
+                  >
+                    Go home
+                  </a>
+                </div>
+              )}
             </div>
           </div>
           <div
             className='my-6'
             ref={intersactionRef}
-          >
-            {isFetching && <Loader />}
-          </div>
+          />
         </main>
-        <footer className='flex h-50 w-full shrink-0 flex-col items-center justify-center gap-6 text-xs'>
-          <ul className='flex w-full justify-center gap-5'>
-            <li>
-              <a href='/'>Log in</a>
-            </li>
-            <li>
-              <a href='/'>About Us</a>
-            </li>
-            <li>
-              <a href='/'>Publisher</a>
-            </li>
-            <li>
-              <a href='/'>Sitemap</a>
-            </li>
-          </ul>
-          <div className='flex flex-col items-center gap-2'>
-            <span>Powered by</span>
-            <img
-              src='/src/shared/assets/images/NewsApiLogo.png'
-              className='object-contain'
-              alt='NewsApi Logo'
-            />
-          </div>
-          <span>© 2023 Besider. Inspired by Insider</span>
-        </footer>
+        <Footer />
       </div>
-      <div
-        className={cn(
-          'pointer-events-none fixed top-0 left-0 z-50 h-full w-full bg-black/80 opacity-0 transition-all',
-          drawer && 'pointer-events-auto opacity-100'
-        )}
-        id='portal-wrapper'
-      />
     </div>
   )
 }

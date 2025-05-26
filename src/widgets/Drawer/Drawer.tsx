@@ -9,7 +9,10 @@ interface DrawerProps extends ComponentProps<'div'> {
 export function Drawer({ setDrawer, ...props }: DrawerProps) {
   const portalWrapper = document.getElementById('portal-wrapper')!
   return createPortal(
-    <div className='absolute h-svh w-full translate-x-0 bg-white transition-all duration-500 ease-in-out starting:-translate-x-400'>
+    <div
+      className='absolute h-svh w-full translate-x-0 bg-white transition-all duration-500 ease-in-out starting:-translate-x-400'
+      {...props}
+    >
       <div className='flex h-full flex-col p-5'>
         <div className='flex w-full justify-end'>
           <button onClick={() => setDrawer(false)}>
@@ -18,25 +21,25 @@ export function Drawer({ setDrawer, ...props }: DrawerProps) {
         </div>
         <ul className='flex flex-1 flex-col justify-center gap-7 text-[1.38rem] font-bold tracking-widest'>
           <li>
-            <a href='/'>SCIENCE</a>
+            <a href='?q=SCIENCE'>SCIENCE</a>
           </li>
           <li>
-            <a href='/'>GENERAL</a>
+            <a href='?q=GENERAL'>GENERAL</a>
           </li>
           <li>
-            <a href='/'>ENTERTAINMENT</a>
+            <a href='?q=ENTERTAINMENT'>ENTERTAINMENT</a>
           </li>
           <li>
-            <a href='/'>TECHNOLOGY</a>
+            <a href='?q=TECHNOLOGY'>TECHNOLOGY</a>
           </li>
           <li>
-            <a href='/'>BUSINESS</a>
+            <a href='?q=BUSINESS'>BUSINESS</a>
           </li>
           <li>
-            <a href='/'>HEALTH</a>
+            <a href='?q=HEALTH'>HEALTH</a>
           </li>
           <li>
-            <a href='/'>SPORTS</a>
+            <a href='?q=SPORTS'>SPORTS</a>
           </li>
         </ul>
       </div>

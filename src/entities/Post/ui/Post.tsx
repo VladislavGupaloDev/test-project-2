@@ -51,12 +51,7 @@ export function Post({
           )}
         </div>
         <div className='flex max-h-full flex-col overflow-hidden'>
-          <a
-            className='text-sm font-black text-blue-600'
-            href={url}
-          >
-            {source}
-          </a>
+          <span className='text-sm font-black text-blue-600'>{source}</span>
           <div className='h-full'>
             <p className='line-clamp-5 text-balance'>{description}</p>
           </div>

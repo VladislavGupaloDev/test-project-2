@@ -4,11 +4,55 @@ import { HamburgerIcon } from '@/shared/assets/icons/HamburgerIcon'
 import { Loader } from '@/shared/assets/icons/Loader'
 import { cn } from '@/shared/lib/helpers/cn'
 import { Drawer } from '@/widgets/Drawer/Drawer'
-import { useState } from 'react'
+import { format } from 'date-fns'
+import { toZonedTime } from 'date-fns-tz'
+import { useEffect, useMemo, useState } from 'react'
+import { useInView } from 'react-intersection-observer'
 
 export function App() {
   const [drawer, setDrawer] = useState(false)
-  const { data: posts, isFetching, isLoading } = useGetPostsQuery()
+  const [page, setPage] = useState(0)
+  const {
+    data: posts,
+    isFetching,
+    isError
+  } = useGetPostsQuery({ page: page + 1 })
+  const [intersactionRef, inView] = useInView({
+    threshold: 0
+  })
+  useEffect(() => {
+    if (inView && !isFetching && posts && !isError) {
+      setPage(prev => prev + 1)
+    }
+  }, [inView, isFetching])
+
+  useEffect(() => {
+    if (isFetching || isError || drawer) return
+    const interval = setInterval(() => {
+      setPage(prev => prev + 1)
+    }, 1000 * 30)
+
+    return () => clearInterval(interval)
+  }, [isFetching, isError, drawer])
+
+  const targetTimezone = 'Europe/Moscow'
+
+  const postsByDate = useMemo(() => {
+    if (!posts?.response?.docs) return {}
+
+    return posts.response.docs.reduce(
+      (acc, article) => {
+        const zonedDate = toZonedTime(article.pub_date, targetTimezone)
+        const date = format(zonedDate, 'yyyy-MM-dd')
+
+        if (!acc[date]) acc[date] = []
+        acc[date].push(article)
+        return acc
+      },
+      {} as Record<string, typeof posts.response.docs>
+    )
+  }, [posts])
+  console.log(postsByDate)
   return (
     <div className='font-display w-max-[360px] w-fullitems-center relative flex h-screen justify-center'>
       <div className='relative flex h-full w-full flex-col'>
@@ -19,7 +63,6 @@ export function App() {
           >
             <HamburgerIcon />
           </button>
-
           {drawer && <Drawer setDrawer={setDrawer} />}
           <div className='flex flex-1 items-center justify-center text-2xl font-black tracking-widest'>
             BESIDER
@@ -27,25 +70,44 @@ export function App() {
         </header>
         <main className='flex w-full flex-1 flex-col items-center px-5'>
           <div className='w-full'>
-            <h2 className='text-lg font-bold'>News for 16.06.2023</h2>
             <div className='mt-8 flex flex-col gap-4'>
-              {posts?.response.docs.map(article => (
-                <Post
-                  key={article._id}
-                  description={article.abstract || article.headline.main}
-                  image={article.multimedia.default.url}
-                  alt={article.multimedia.caption}
-                  date={new Date(article.pub_date).toISOString()}
-                />
-              ))}
+              {Object.entries(postsByDate)
+                .sort(
+                  ([a], [b]) => new Date(b).getTime() - new Date(a).getTime()
+                )
+                .map(([date, articles]) => (
+                  <div
+                    key={date}
+                    className='mb-6'
+                  >
+                    <h3 className='mb-3 text-xl font-semibold'>
+                      News for {format(date, 'dd.MM.yyyy')}
+                    </h3>
+                    <div className='flex flex-col gap-4'>
+                      {articles.map(article => (
+                        <Post
+                          key={article._id}
+                          description={
+                            article.abstract || article.headline.main
+                          }
+                          url={article.web_url}
+                          source={article.source}
+                          image={article.multimedia?.default?.url}
+                          alt={article.multimedia?.caption}
+                          date={toZonedTime(article.pub_date, targetTimezone)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
-
-          {(isFetching || isLoading) && (
-            <div className='my-6'>
-              <Loader />
-            </div>
-          )}
+          <div
+            className='my-6'
+            ref={intersactionRef}
+          >
+            {isFetching && <Loader />}
+          </div>
         </main>
         <footer className='flex h-50 w-full shrink-0 flex-col items-center justify-center gap-6 text-xs'>
           <ul className='flex w-full justify-center gap-5'>

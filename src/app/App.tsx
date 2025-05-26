@@ -1,3 +1,4 @@
+import { useGetPostsQuery } from '@/entities/Post/model/post.api'
 import { Post } from '@/entities/Post/ui/Post'
 import { HamburgerIcon } from '@/shared/assets/icons/HamburgerIcon'
 import { Loader } from '@/shared/assets/icons/Loader'
@@ -7,6 +8,7 @@ import { useState } from 'react'
 
 export function App() {
   const [drawer, setDrawer] = useState(false)
+  const { data: posts, isFetching, isLoading } = useGetPostsQuery()
   return (
     <div className='font-display w-max-[360px] w-fullitems-center relative flex h-screen justify-center'>
       <div className='relative flex h-full w-full flex-col'>
@@ -27,17 +29,23 @@ export function App() {
           <div className='w-full'>
             <h2 className='text-lg font-bold'>News for 16.06.2023</h2>
             <div className='mt-8 flex flex-col gap-4'>
-              <Post />
-              <Post />
-              <Post />
-              <Post />
-              <Post />
+              {posts?.response.docs.map(article => (
+                <Post
+                  key={article._id}
+                  description={article.abstract || article.headline.main}
+                  image={article.multimedia.default.url}
+                  alt={article.multimedia.caption}
+                  date={new Date(article.pub_date).toISOString()}
+                />
+              ))}
             </div>
           </div>
 
-          <div className='my-6'>
-            <Loader />
-          </div>
+          {(isFetching || isLoading) && (
+            <div className='my-6'>
+              <Loader />
+            </div>
+          )}
         </main>
         <footer className='flex h-50 w-full shrink-0 flex-col items-center justify-center gap-6 text-xs'>
           <ul className='flex w-full justify-center gap-5'>

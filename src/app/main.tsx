@@ -1,4 +1,5 @@
 import { App } from './App'
+import { StoreProvider } from './providers/StoreProvider/StoreProvider'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
@@ -8,6 +9,8 @@ const root = createRoot(element)
 
 root.render(
   <StrictMode>
-    <App />
+    <StoreProvider>
+      <App />
+    </StoreProvider>
   </StrictMode>
 )

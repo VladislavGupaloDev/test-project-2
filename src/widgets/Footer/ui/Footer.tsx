@@ -18,7 +18,7 @@ export function Footer() {
       <div className='flex flex-col items-center gap-2'>
         <span>Powered by</span>
         <img
-          src='/public/images/NewsApiLogo.png'
+          src={`${import.meta.env.BASE_URL}public/images/news_api_logo.png`}
           className='object-contain'
           alt='NewsApi Logo'
         />

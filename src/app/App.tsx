@@ -1,3 +1,3 @@
 export function App() {
-  return <div>App Init</div>
+  return <div className='font-display'>App Init</div>
 }

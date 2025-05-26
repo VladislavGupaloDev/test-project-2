@@ -1,16 +1,22 @@
-@import 'tailwindcss';
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+@font-face {
+  font-family: Lato;
+  src: url('../shared/assets/fonts/Lato-Regular.woff2') format('woff2');
   font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+@font-face {
+  font-family: Lato;
+  src: url('../shared/assets/fonts/Lato-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import 'tailwindcss';
+@theme {
+  --font-display: Lato, 'sans-serif';
 }
 
 body {
